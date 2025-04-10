@@ -1,5 +1,5 @@
 from cryptography.fernet import Fernet
-from flask import Flask, render_template, request
+from flask import Flask, render_template
 
 app = Flask(__name__)
 
@@ -7,7 +7,7 @@ app = Flask(__name__)
 def hello_world():
     return render_template('hello.html')
 
-# Clé de chiffrement par défaut pour la session
+# Route encrypt classique (clé générée en interne)
 key = Fernet.generate_key()
 f = Fernet(key)
 
@@ -17,39 +17,25 @@ def encryptage(valeur):
     token = f.encrypt(valeur_bytes)
     return f"Valeur encryptée : {token.decode()}"
 
-# ✅ Séquence 5 - Exercice 1 : Route de décryptage
-@app.route('/decrypt/<string:token>')
-def decryptage(token):
+# ✅ Nouvelle route : Encrypt avec clé perso (GET)
+@app.route('/encrypt_custom/<key>/<message>')
+def encrypt_custom_get(key, message):
     try:
-        token_bytes = token.encode()
-        valeur_decryptee = f.decrypt(token_bytes)
-        return f"Valeur décryptée : {valeur_decryptee.decode()}"
-    except Exception as e:
-        return f"Erreur lors du décryptage : {str(e)}"
-
-# ✅ Séquence 5 - Exercice 2 : Clé personnalisée - Encrypt
-@app.route('/encrypt_custom', methods=['POST'])
-def encrypt_custom():
-    message = request.form.get('message')
-    custom_key = request.form.get('key')
-    try:
-        f_custom = Fernet(custom_key.encode())
+        f_custom = Fernet(key.encode())
         token = f_custom.encrypt(message.encode())
         return f"Message encrypté : {token.decode()}"
     except Exception as e:
-        return f"Erreur : {str(e)}"
+        return f"Erreur d'encryptage : {str(e)}"
 
-# ✅ Séquence 5 - Exercice 2 : Clé personnalisée - Decrypt
-@app.route('/decrypt_custom', methods=['POST'])
-def decrypt_custom():
-    token = request.form.get('token')
-    custom_key = request.form.get('key')
+# ✅ Nouvelle route : Decrypt avec clé perso (GET)
+@app.route('/decrypt_custom/<key>/<token>')
+def decrypt_custom_get(key, token):
     try:
-        f_custom = Fernet(custom_key.encode())
+        f_custom = Fernet(key.encode())
         message = f_custom.decrypt(token.encode())
         return f"Message décrypté : {message.decode()}"
     except Exception as e:
-        return f"Erreur : {str(e)}"
+        return f"Erreur de décryptage : {str(e)}"
 
 if __name__ == "__main__":
     app.run(debug=True)
