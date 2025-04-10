@@ -7,17 +7,33 @@ app = Flask(__name__)
 def hello_world():
     return render_template('hello.html')
 
-# Route encrypt classique (clé générée en interne)
+# 🔐 Clé de session (utilisée pour encrypt/decrypt classiques)
 key = Fernet.generate_key()
 f = Fernet(key)
 
+# ➕ Nouvelle route pour afficher la clé
+@app.route('/get_key')
+def get_key():
+    return f"Voici la clé générée pour cette session : {key.decode()}"
+
+# 🔐 Encrypt par défaut
 @app.route('/encrypt/<string:valeur>')
 def encryptage(valeur):
     valeur_bytes = valeur.encode()
     token = f.encrypt(valeur_bytes)
     return f"Valeur encryptée : {token.decode()}"
 
-# ✅ Nouvelle route : Encrypt avec clé perso (GET)
+# 🔓 Décryptage par défaut
+@app.route('/decrypt/<string:token>')
+def decryptage(token):
+    try:
+        token_bytes = token.encode()
+        valeur_decryptee = f.decrypt(token_bytes)
+        return f"Valeur décryptée : {valeur_decryptee.decode()}"
+    except Exception as e:
+        return f"Erreur lors du décryptage : {str(e)}"
+
+# 🔐 Encrypt avec clé personnalisée (GET)
 @app.route('/encrypt_custom/<key>/<message>')
 def encrypt_custom_get(key, message):
     try:
@@ -27,7 +43,7 @@ def encrypt_custom_get(key, message):
     except Exception as e:
         return f"Erreur d'encryptage : {str(e)}"
 
-# ✅ Nouvelle route : Decrypt avec clé perso (GET)
+# 🔓 Décrypt avec clé personnalisée (GET)
 @app.route('/decrypt_custom/<key>/<token>')
 def decrypt_custom_get(key, token):
     try:
